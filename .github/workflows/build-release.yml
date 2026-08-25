@@ -1,0 +1,38 @@
+name: Build and Release Executable
+
+on:
+  push:
+    tags:
+      - 'v*' # Triggers whenever you push a version tag like v1.0.0, v2.1.0, etc.
+
+jobs:
+  build-exe:
+    name: Compile PowerShell to EXE
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Install and run PS2EXE compiler
+        shell: powershell
+        run: |
+          Write-Host "Installing PS2EXE from PowerShell Gallery..."
+          Install-Module -Name ps2exe -Force -SkipPublisherCheck -Scope CurrentUser
+          
+          Write-Host "Creating output binary folder..."
+          New-Item -ItemType Directory -Path ".\dist" -Force | Out-Null
+          
+          Write-Host "Compiling Main.ps1 into winutil-apex.exe..."
+          # -x86 forces it to execute cleanly across architectures
+          # -title and -description inject metadata into the properties of the file
+          Invoke-ps2exe -inputFile ".\src\Main.ps1" -outputFile ".\dist\winutil-apex.exe" -title "WinUtil Apex Core" -description "Next-Gen Windows Optimization Suite" -icon ".\docs\assets\favicon.ico" -noConsole -x86
+          
+          Write-Host "Compilation complete!"
+
+      - name: Create Production Release Package
+        uses: softprops/action-gh-release@v2
+        with:
+          files: .\dist\winutil-apex.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
