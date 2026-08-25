@@ -3,24 +3,33 @@ name: Build and Release Executable
 on:
   push:
     tags:
-      - 'v*' # Triggers automatically when you push a version tag like v1.2.0
+      - 'v*' # Triggers automatically when you push a version tag like v1.4.0
 
 jobs:
   build-exe:
     name: Compile PowerShell Matrix on Windows Cloud
     runs-on: windows-latest
+    
+    permissions:
+      contents: write
 
     steps:
       - name: Check out repository code structure
         uses: actions/checkout@v4
 
       - name: Setup Environment and Compile Standalone Binary
+        # CRITICAL FIX: Changed from default shell to explicitly target Windows PowerShell 5.1
         shell: powershell
         run: |
-          Write-Host "[i] Initializing cloud repository environment structure..."
+          $ErrorActionPreference = 'Stop'
+          Write-Host "[i] Trusting PSGallery repository channels..."
+          Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
+          
+          Write-Host "[i] Installing PS2EXE compilation engine from PowerShell Gallery..."
           Install-Module -Name ps2exe -Force -SkipPublisherCheck -Scope CurrentUser
           
           Write-Host "[i] Constructing isolated distribution staging folders..."
+          if (Test-Path ".\dist") { Remove-Item ".\dist" -Recurse -Force }
           New-Item -ItemType Directory -Path ".\dist" -Force | Out-Null
           
           Write-Host "[i] Executing core binary compilation sequence via PS2EXE..."
@@ -31,7 +40,8 @@ jobs:
           Copy-Item -Path ".\src\*" -Destination ".\dist\src\" -Recurse -Force
           
           Write-Host "[✓] Packaging absolute distribution ZIP bundle..."
-          Compress-Archive -Path ".\dist\*" -DestinationPath ".\winutil-apex-v1.2.0.zip" -Force
+          if (Test-Path ".\winutil-apex-v1.4.0.zip") { Remove-Item ".\winutil-apex-v1.4.0.zip" -Force }
+          Compress-Archive -Path ".\dist\*" -DestinationPath ".\winutil-apex-v1.4.0.zip" -Force
           
           Write-Host "[✓] Build operation completed successfully!"
 
@@ -41,7 +51,7 @@ jobs:
           name: "WinUtil Apex Core Framework Release ${{ github.ref_name }}"
           files: |
             .\dist\winutil-apex.exe
-            .\winutil-apex-v1.2.0.zip
+            .\winutil-apex-v1.4.0.zip
           draft: false
           prerelease: false
         env:
