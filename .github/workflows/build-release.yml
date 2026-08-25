@@ -3,36 +3,52 @@ name: Build and Release Executable
 on:
   push:
     tags:
-      - 'v*' # Triggers whenever you push a version tag like v1.0.0, v2.1.0, etc.
+      - 'v*' # Triggers automatically when you push a version tag like v1.0.0
 
 jobs:
   build-exe:
-    name: Compile PowerShell to EXE
+    name: Compile PowerShell Matrix on Windows Cloud
     runs-on: windows-latest
 
     steps:
-      - name: Check out repository code
+      - name: Check out repository code structure
         uses: actions/checkout@v4
 
-      - name: Install and run PS2EXE compiler
+      - name: Setup Environment and Compile Standalone Binary
         shell: powershell
         run: |
-          Write-Host "Installing PS2EXE from PowerShell Gallery..."
+          Write-Host "[i] Initializing cloud repository environment structure..."
+          # Install the compiler module natively in the cloud runner context
           Install-Module -Name ps2exe -Force -SkipPublisherCheck -Scope CurrentUser
           
-          Write-Host "Creating output binary folder..."
+          Write-Host "[i] Constructing isolated distribution staging folders..."
           New-Item -ItemType Directory -Path ".\dist" -Force | Out-Null
           
-          Write-Host "Compiling Main.ps1 into winutil-apex.exe..."
-          # -x86 forces it to execute cleanly across architectures
-          # -title and -description inject metadata into the properties of the file
-          Invoke-ps2exe -inputFile ".\src\Main.ps1" -outputFile ".\dist\winutil-apex.exe" -title "WinUtil Apex Core" -description "Next-Gen Windows Optimization Suite" -icon ".\docs\assets\favicon.ico" -noConsole -x86
+          Write-Host "[i] Executing core binary compilation sequence via PS2EXE..."
+          # This compiles your main script into a streamlined standalone executable layer
+          Invoke-ps2exe -inputFile ".\src\Main.ps1" -outputFile ".\dist\winutil-apex.exe" -title "WinUtil Apex Core" -description "Next-Gen Windows Optimization Matrix Suite" -noConsole -x86
           
-          Write-Host "Compilation complete!"
+          Write-Host "[✓] Core compilation successful. Copying supporting graphic visual assets..."
+          # CRITICAL STEP: Copy your sidecar UI asset layouts so the .exe can draw the window
+          New-Item -ItemType Directory -Path ".\dist\src" -Force | Out-Null
+          Copy-Item -Path ".\src\*" -Destination ".\dist\src\" -Recurse -Force
+          
+          Write-Host "[✓] Packaging absolute distribution ZIP bundle..."
+          # Compress everything into a clean distribution archive package container
+          Compress-Archive -Path ".\dist\*" -DestinationPath ".\winutil-apex-v1.0.0.zip" -Force
+          
+          Write-Host "[✓] Build operation completed successfully!"
 
-      - name: Create Production Release Package
-        uses: softprops/action-gh-release@v2
+      - name: Publish Production Package Live to GitHub Releases
+        # Upgraded to v3 to run safely on Node 24 cloud dependencies
+        uses: softprops/action-gh-release@v3
         with:
-          files: .\dist\winutil-apex.exe
+          name: "WinUtil Apex Core Framework Release ${{ github.ref_name }}"
+          # Attach BOTH the standalone binary and the zero-dependency full asset ZIP bundle!
+          files: |
+            .\dist\winutil-apex.exe
+            .\winutil-apex-v1.0.0.zip
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
