@@ -3,7 +3,7 @@ name: Build and Release Executable
 on:
   push:
     tags:
-      - 'v*' # Triggers automatically when you push a version tag like v1.0.0
+      - 'v*' # Triggers automatically when you push a version tag like v1.2.0
 
 jobs:
   build-exe:
@@ -18,36 +18,30 @@ jobs:
         shell: powershell
         run: |
           Write-Host "[i] Initializing cloud repository environment structure..."
-          # Install the compiler module natively in the cloud runner context
           Install-Module -Name ps2exe -Force -SkipPublisherCheck -Scope CurrentUser
           
           Write-Host "[i] Constructing isolated distribution staging folders..."
           New-Item -ItemType Directory -Path ".\dist" -Force | Out-Null
           
           Write-Host "[i] Executing core binary compilation sequence via PS2EXE..."
-          # This compiles your main script into a streamlined standalone executable layer
           Invoke-ps2exe -inputFile ".\src\Main.ps1" -outputFile ".\dist\winutil-apex.exe" -title "WinUtil Apex Core" -description "Next-Gen Windows Optimization Matrix Suite" -noConsole -x86
           
           Write-Host "[✓] Core compilation successful. Copying supporting graphic visual assets..."
-          # CRITICAL STEP: Copy your sidecar UI asset layouts so the .exe can draw the window
           New-Item -ItemType Directory -Path ".\dist\src" -Force | Out-Null
           Copy-Item -Path ".\src\*" -Destination ".\dist\src\" -Recurse -Force
           
           Write-Host "[✓] Packaging absolute distribution ZIP bundle..."
-          # Compress everything into a clean distribution archive package container
-          Compress-Archive -Path ".\dist\*" -DestinationPath ".\winutil-apex-v1.0.0.zip" -Force
+          Compress-Archive -Path ".\dist\*" -DestinationPath ".\winutil-apex-v1.2.0.zip" -Force
           
           Write-Host "[✓] Build operation completed successfully!"
 
       - name: Publish Production Package Live to GitHub Releases
-        # Upgraded to v3 to run safely on Node 24 cloud dependencies
         uses: softprops/action-gh-release@v3
         with:
           name: "WinUtil Apex Core Framework Release ${{ github.ref_name }}"
-          # Attach BOTH the standalone binary and the zero-dependency full asset ZIP bundle!
           files: |
             .\dist\winutil-apex.exe
-            .\winutil-apex-v1.0.0.zip
+            .\winutil-apex-v1.2.0.zip
           draft: false
           prerelease: false
         env:
