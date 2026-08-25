@@ -3,7 +3,7 @@ name: Build and Release Executable
 on:
   push:
     tags:
-      - 'v*' # Triggers automatically when you push a version tag like v1.4.0
+      - 'v*' # Triggers automatically when you push a version tag like v1.5.0
 
 jobs:
   build-exe:
@@ -18,7 +18,6 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Environment and Compile Standalone Binary
-        # CRITICAL FIX: Changed from default shell to explicitly target Windows PowerShell 5.1
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
@@ -35,15 +34,15 @@ jobs:
           Write-Host "[i] Executing core binary compilation sequence via PS2EXE..."
           Invoke-ps2exe -inputFile ".\src\Main.ps1" -outputFile ".\dist\winutil-apex.exe" -title "WinUtil Apex Core" -description "Next-Gen Windows Optimization Matrix Suite" -noConsole -x86
           
-          Write-Host "[✓] Core compilation successful. Copying supporting graphic visual assets..."
-          New-Item -ItemType Directory -Path ".\dist\src" -Force | Out-Null
+          Write-Host "[OK] Core compilation successful. Copying supporting graphic visual assets..."
+          if (-not (Test-Path ".\dist\src")) { New-Item -ItemType Directory -Path ".\dist\src" -Force | Out-Null }
           Copy-Item -Path ".\src\*" -Destination ".\dist\src\" -Recurse -Force
           
-          Write-Host "[✓] Packaging absolute distribution ZIP bundle..."
-          if (Test-Path ".\winutil-apex-v1.4.0.zip") { Remove-Item ".\winutil-apex-v1.4.0.zip" -Force }
-          Compress-Archive -Path ".\dist\*" -DestinationPath ".\winutil-apex-v1.4.0.zip" -Force
+          Write-Host "[OK] Packaging absolute distribution ZIP bundle..."
+          if (Test-Path ".\winutil-apex-v1.5.0.zip") { Remove-Item ".\winutil-apex-v1.5.0.zip" -Force }
+          Compress-Archive -Path ".\dist\*" -DestinationPath ".\winutil-apex-v1.5.0.zip" -Force
           
-          Write-Host "[✓] Build operation completed successfully!"
+          Write-Host "[OK] Build operation completed successfully!"
 
       - name: Publish Production Package Live to GitHub Releases
         uses: softprops/action-gh-release@v3
@@ -51,7 +50,7 @@ jobs:
           name: "WinUtil Apex Core Framework Release ${{ github.ref_name }}"
           files: |
             .\dist\winutil-apex.exe
-            .\winutil-apex-v1.4.0.zip
+            .\winutil-apex-v1.5.0.zip
           draft: false
           prerelease: false
         env:
