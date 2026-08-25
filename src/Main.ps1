@@ -1,9 +1,8 @@
 # ==============================================================================
 # winutil-project - Advanced Master Runtime Engine Loader
-# Inspired by Chris Titus Tech WinUtil // Fully Modularized & Synchronized
 # ==============================================================================
 
-# 1. CORE LAYER COMPONENT INJECTION IMPORTS
+# 1. CORE LAYER COMPONENT INJECTION IMPORTS (FIXED WITH PSSCRIPTROOT)
 . "$PSScriptRoot\Core\Privileges.ps1"
 . "$PSScriptRoot\Core\Logging.ps1"
 
